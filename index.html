@@ -23,6 +23,7 @@
       <div class="alert-message"></div>
       <div class="input-section">
         <input type="text" placeholder="Add a new to-do" class="input input-bordered input-accent w-full max-w-xs"/>
+        <input type="date" class="input input-bordered input-accent w-full max-w-xs date-input"/>
         <button class="btn btn-accent add-task-button">
           <i class="bx bx-plus bx-sm"></i>
         </button>
@@ -33,12 +34,12 @@
       <div class="dropdown">
         <label tabindex="0" class="btn m-1">Filter</label>
         <ul tabindex="0" class="dropdown-content menu p-2 shadow bg-base-100 rounded-box w-52">
-            <li onclick="filterTodos('all')"><a class="btn btn-ghost w-full justify-start">All</a></li>
-            <li onclick="filterTodos('pending')"><a class="btn btn-ghost w-full justify-start">Pending</a></li>
-            <li onclick="filterTodos('completed')"><a class="btn btn-ghost w-full justify-start">Completed</a></li>
+            <li onclick="uiManager.handleFilterTodos('all')"><a class="btn btn-ghost w-full justify-start">All</a></li>
+            <li onclick="uiManager.handleFilterTodos('pending')"><a class="btn btn-ghost w-full justify-start">Pending</a></li>
+            <li onclick="uiManager.handleFilterTodos('completed')"><a class="btn btn-ghost w-full justify-start">Completed</a></li>
         </ul>
       </div>
-      <button class="btn btn-accent delete-all-button">
+      <button class="btn delete-all-button custom-red-btn">
         Delete all
       </button>
     </div>
@@ -74,7 +75,7 @@
 
   <footer>
     <div class="author-text">
-      <p>Made with 🌟 by <a href="https://github.com/realrmdhn2025" target="_blank"><b>realrmdhn</b></a></p>
+      <p>© 2025 <a href="https://github.com/realrmdhn2025" target="_blank"><b>realrmdhn</b></a>. All Right Reserved.</p>
     </div>
   </footer>
 

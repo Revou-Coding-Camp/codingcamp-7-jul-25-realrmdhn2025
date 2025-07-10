@@ -154,3 +154,22 @@ header .input-section {
         min-width: 96%;
     }
 }
+
+[data-theme="light"] input[type="date"]::-webkit-calendar-picker-indicator {
+  filter: invert(0); 
+}
+
+[data-theme="dark"] input[type="date"]::-webkit-calendar-picker-indicator,
+[data-theme="night"] input[type="date"]::-webkit-calendar-picker-indicator {
+  filter: invert(1); 
+}
+
+.custom-red-btn {
+  background-color: #dc2626;
+  color: white;
+  border: none;
+}
+
+.custom-red-btn:hover {
+  background-color: #b91c1c;
+}
