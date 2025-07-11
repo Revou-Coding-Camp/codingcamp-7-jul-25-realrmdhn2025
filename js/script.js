@@ -139,6 +139,28 @@ class UIManager {
                 this.handleFilterTodos(status);
             });
         });
+
+        // Move selectAllCheckbox logic inside the method
+        const selectAllCheckbox = document.getElementById("select-all-checkbox");
+        if (selectAllCheckbox) {
+            selectAllCheckbox.addEventListener("change", (e) => {
+                const isChecked = e.target.checked;
+                const checkboxes = document.querySelectorAll(".select-todo-checkbox");
+
+                this.selectedTodosIds = [];
+
+                checkboxes.forEach((cb) => {
+                    cb.checked = isChecked;
+                    const id = cb.getAttribute("data-id");
+
+                    if (isChecked) {
+                        this.selectedTodosIds.push(id);
+                    }
+                });
+
+                this.updateBulkDeleteButton();
+            });
+        }
     }
 
     setupKeyboardNavigation() {
@@ -168,7 +190,7 @@ class UIManager {
 
             if (e.key === "Backspace") {
                 e.preventDefault();
-                
+
                 if (val.length > 10) {
                     this.dateInput.value = val.slice(0, 7);
                     e.preventDefault();
@@ -199,15 +221,15 @@ class UIManager {
     handleAddTodo() {
         const task = this.taskInput.value;
         const dueDate = this.dateInput.value;
-        
+
         if (dueDate) {
             const year = parseInt(dueDate.split("-")[0], 10);
-            if (year >9999) {
+            if (year > 9999) {
                 this.showAlertMessage("Year must be 4 digits or less.", "error");
                 return;
             }
         }
-        
+
         if (task === "") {
             this.showAlertMessage("Please enter a task.", "error");
         } else {
@@ -249,14 +271,24 @@ class UIManager {
     }
 
     handleClearAllTodos() {
+        const totalTodos = this.todoManager.todos.length;
+
         this.taskInput.value = "";
         this.dateInput.value = "";
         this.currentEditingId = null;
         this.addBtn.innerHTML = "<i class='bx bx-plus bx-sm'></i>";
-        
-        this.todoManager.clearAllTodos();
+
+        if (totalTodos === 0) {
+            this.showAlertMessage("No tasks to clear!", "warning");
+        } else {
+            this.todoManager.clearAllTodos();
+            this.showAlertMessage("All tasks cleared successfully!", "error");
+        }
+
+        document.getElementById("select-all-checkbox").checked = false;
+
         this.showAllTodos();
-        this.showAlertMessage("All tasks cleared successfully!", "error");
+
     }
 
     handleBulkDelete() {
@@ -275,6 +307,9 @@ class UIManager {
 
         this.showAlertMessage("Selected tasks deleted successfully!", "success");
         this.showAllTodos();
+
+        document.getElementById("select-all-checkbox").checked = false;
+
         this.updateBulkDeleteButton();
     }
 
@@ -303,7 +338,9 @@ class UIManager {
                         <input type="checkbox" class="select-todo-checkbox mr-2" data-id="${todo.id}" ${this.currentEditingId ? 'disabled' : ''} ${this.selectedTodosIds.includes(todo.id) ? 'checked' : ''}>
                     </td>
                     <td>
-                        <span class="task-text" data-full-text="${todo.task}">
+                        <span
+                            class="task-text relative inline-block cursor-pointer hover:underline max-w-[150px] truncate"
+                            title="${todo.task}">
                             ${this.todoItemFormatter.formatTask(todo.task)}
                         </span>
                     </td>
@@ -345,6 +382,13 @@ class UIManager {
                     this.selectedTodosIds = this.selectedTodosIds.filter((todoId) => todoId !== id);
                 }
 
+                //uncheck "select all" if any checkbox is unchecked
+                const selectAllCheckbox = document.getElementById("select-all-checkbox");
+                if (selectAllCheckbox) {
+                    const allChecked = [...checkboxes].every((cb) => cb.checked);
+                    selectAllCheckbox.checked = allChecked;
+                }
+
                 this.updateBulkDeleteButton();
             });
         });
@@ -367,7 +411,7 @@ class UIManager {
     handleToggleStatus(id) {
         this.todoManager.toggleTodoStatus(id);
         this.showAllTodos();
-        
+
         const todo = this.todoManager.todos.find((t) => t.id === id);
         if (todo.completed) {
             this.showAlertMessage("Awesome, You’ve successfully completed this task!", "success");
@@ -383,7 +427,7 @@ class UIManager {
             this.currentEditingId = null;
             this.addBtn.innerHTML = "<i class='bx bx-plus bx-sm'></i>";
         }
-        
+
         this.todoManager.deleteTodo(id);
         this.showAlertMessage("Task deleted successfully!", "error");
         this.showAllTodos();

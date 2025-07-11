@@ -181,6 +181,7 @@ header .input-section {
 }
 
 .task-text {
+    position: relative;
     display: inline-block;
     max-width: 150px;
     vertical-align: middle;
@@ -188,7 +189,6 @@ header .input-section {
     overflow: hidden;
     text-overflow: ellipsis;
     cursor: pointer;
-    position: relative;
 }
 
 .task-text:hover::after {
