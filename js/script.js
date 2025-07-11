@@ -99,6 +99,7 @@ class UIManager {
         this.currentEditingId = null;
 
         this.addEventListeners();
+        this.setupKeyboardNavigation();
         this.showAllTodos();
     }
 
@@ -134,9 +135,73 @@ class UIManager {
         });
     }
 
+    setupKeyboardNavigation() {
+        this.taskInput.addEventListener("keydown", (e) => {
+            if (e.key === "Enter" && this.taskInput.value.trim() !== "") {
+                e.preventDefault();
+                this.dateInput.focus();
+            }
+        });
+
+        this.dateInput.addEventListener("input", () => {
+            const val = this.dateInput.value;
+            const parts = val.split("-");
+            if (parts.length >= 1 && parts[0].length > 4) {
+                parts[0] = parts[0].slice(0, 4);
+                this.dateInput.value = parts.join("-");
+            }
+        });
+
+        this.dateInput.addEventListener("keydown", (e) => {
+            const val = this.dateInput.value;
+
+            if (e.key === "Enter") {
+                e.preventDefault();
+                this.addBtn.focus();
+            }
+
+            if (e.key === "Backspace") {
+                e.preventDefault();
+                
+                if (val.length > 10) {
+                    this.dateInput.value = val.slice(0, 7);
+                    e.preventDefault();
+                } else if (val.length > 7) {
+                    this.dateInput.value = val.slice(0, 4);
+                    e.preventDefault();
+                } else if (val.length >= 4) {
+                    this.dateInput.value = "";
+                    e.preventDefault();
+                } else {
+                    this.taskInput.focus();
+                }
+            }
+        });
+
+        this.addBtn.addEventListener("keydown", (e) => {
+            if (e.key === "Enter") {
+                e.preventDefault();
+                if (this.currentEditingId) {
+                    this.handleSaveEdit();
+                } else {
+                    this.handleAddTodo();
+                }
+            }
+        });
+    }
+
     handleAddTodo() {
         const task = this.taskInput.value;
         const dueDate = this.dateInput.value;
+        
+        if (dueDate) {
+            const year = parseInt(dueDate.split("-")[0], 10);
+            if (year >9999) {
+                this.showAlertMessage("Year must be 4 digits or less.", "error");
+                return;
+            }
+        }
+        
         if (task === "") {
             this.showAlertMessage("Please enter a task.", "error");
         } else {
@@ -151,6 +216,15 @@ class UIManager {
     handleSaveEdit() {
         const updatedTask = this.taskInput.value;
         const updatedDate = this.dateInput.value;
+
+        if (updatedDate) {
+            const year = parseInt(updatedDate.split("-")[0], 10);
+            if (year > 9999) {
+                this.showAlertMessage("Year must be 4 digits or less.", "error");
+                return;
+            }
+        }
+
         this.todoManager.editTodo(this.currentEditingId, updatedTask, updatedDate);
         this.taskInput.value = "";
         this.dateInput.value = "";
@@ -171,7 +245,7 @@ class UIManager {
     handleClearAllTodos() {
         this.todoManager.clearAllTodos();
         this.showAllTodos();
-        this.showAlertMessage("All tasks cleared successfully!", "success");
+        this.showAlertMessage("All tasks cleared successfully!", "error");
     }
 
     showAllTodos() {
@@ -239,20 +313,20 @@ class UIManager {
     }
 
     handleToggleStatus(id) {
+        this.todoManager.toggleTodoStatus(id);
+        this.showAllTodos();
+        
         const todo = this.todoManager.todos.find((t) => t.id === id);
-        if (todo) {
-            this.todoManager.toggleTodoStatus(id);
-            
-            const message = todo.completed ? "Awesome, You’ve successfully completed this task!" : "Oopsie! Task status undone";
-            
-            this.showAlertMessage(message, "success");
-            this.showAllTodos();
+        if (todo.completed) {
+            this.showAlertMessage("Awesome, You’ve successfully completed this task!", "success");
+        } else {
+            this.showAlertMessage("Oopsie! Task status undone", "warning");
         }
     }
 
     handleDeleteTodo(id) {
         this.todoManager.deleteTodo(id);
-        this.showAlertMessage("Task deleted successfully!", "success");
+        this.showAlertMessage("Task deleted successfully!", "error");
         this.showAllTodos();
     }
 
