@@ -21,7 +21,7 @@ class TodoManager {
     addTodo(task, dueDate) {
         const newTodo = {
             id: this.getRandomId(),
-            task: this.todoItemFormatter.formatTask(task),
+            task: task,
             dueDate: this.todoItemFormatter.formatDate(dueDate),
             completed: false,
             status: "pending",
@@ -161,7 +161,11 @@ class UIManager {
       todos.forEach((todo) => {
         this.todosListBody.innerHTML += `
           <tr class="todo-item" data-id="${todo.id}">
-            <td>${this.todoItemFormatter.formatTask(todo.task)}</td>
+            <td>
+                <span class="task-text" data-fulltext="${todo.task}">
+                    ${this.todoItemFormatter.formatTask(todo.task)}
+                </span>
+            </td>
             <td>${this.todoItemFormatter.formatDate(todo.dueDate)}</td>
             <td>${this.todoItemFormatter.formatStatus(todo.completed)}</td>
             <td>
@@ -279,3 +283,10 @@ const uiManager = new UIManager(todoManager, todoItemFormatter);
 const themes = document.querySelectorAll(".theme-item");
 const html = document.querySelector("html");
 const themeSwitcher = new ThemeSwitcher(themes, html);
+
+//expand or collapse the task text on click
+document.addEventListener("click", function (e) {
+    if (e.target.classList.contains("task-text")) {
+        e.target.classList.toggle("expanded");
+    }
+});

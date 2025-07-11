@@ -173,3 +173,37 @@ header .input-section {
 .custom-red-btn:hover {
   background-color: #b91c1c;
 }
+
+.task-text {
+    display: inline-block;
+    max-width: 150px;
+    vertical-align: middle;
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    cursor: pointer;
+    position: relative;
+}
+
+.task-text:hover::after {
+    content: attr(data-fulltext);
+    position: absolute;
+    background: #333;
+    color: #fff;
+    padding: 5px 10px;
+    border-radius: 4px;
+    top: 100%;
+    left: 0;
+    white-space: normal;
+    z-index: 99;
+    width: max-content;
+    max-width: 300px;
+}
+
+.task-text.expanded {
+    white-space: normal;
+    overflow: visible;
+    text-overflow: unset;
+    max-width: none;
+    transition: all 0.3s ease;
+}
