@@ -31,10 +31,11 @@ class TodoManager {
         return newTodo;
     }
 
-    editTodo(id, updatedTask) {
+    editTodo(id, updatedTask, updatedDueDate) {
         const todo = this.todos.find((t) => t.id === id);
         if (todo) {
             todo.task = updatedTask;
+            todo.dueDate = this.todoItemFormatter.formatDate(updatedDueDate);
             this.saveToLocalStorage();
         }
         return todo;
@@ -95,19 +96,28 @@ class UIManager {
         this.todosListBody = document.querySelector(".todos-list-body");
         this.alertMessage = document.querySelector(".alert-message");
         this.deleteAllBtn = document.querySelector(".delete-all-button");
+        this.currentEditingId = null;
 
-    this.addEventListeners();
-    this.showAllTodos(); 
+        this.addEventListeners();
+        this.showAllTodos();
     }
 
     addEventListeners() {
         this.addBtn.addEventListener("click", () => {
-            this.handleAddTodo();
+            if (this.currentEditingId) {
+                this.handleSaveEdit();
+            } else {
+                this.handleAddTodo();
+            }
         });
 
         this.taskInput.addEventListener("keyup", (e) => {
             if (e.key === "Enter" && this.taskInput.value.length > 0) {
-                this.handleAddTodo();
+                if (this.currentEditingId) {
+                    this.handleSaveEdit();
+                } else {
+                    this.handleAddTodo();
+                }
             }
         });
 
@@ -130,12 +140,32 @@ class UIManager {
         if (task === "") {
             this.showAlertMessage("Please enter a task.", "error");
         } else {
-            const newTodo = this.todoManager.addTodo(task, dueDate);
+            this.todoManager.addTodo(task, dueDate);
             this.showAllTodos();
             this.taskInput.value = "";
             this.dateInput.value = "";
             this.showAlertMessage("Task added successfully!", "success");
         }
+    }
+
+    handleSaveEdit() {
+        const updatedTask = this.taskInput.value;
+        const updatedDate = this.dateInput.value;
+        this.todoManager.editTodo(this.currentEditingId, updatedTask, updatedDate);
+        this.taskInput.value = "";
+        this.dateInput.value = "";
+        this.currentEditingId = null;
+        this.addBtn.innerHTML = "<i class='bx bx-plus bx-sm'></i>";
+        this.showAlertMessage("Task updated successfully!", "success");
+        this.showAllTodos();
+    }
+
+    handleCancelEdit() {
+        this.taskInput.value = "";
+        this.dateInput.value = "";
+        this.currentEditingId = null;
+        this.addBtn.innerHTML = "<i class='bx bx-plus bx-sm'></i>";
+        this.showAllTodos();
     }
 
     handleClearAllTodos() {
@@ -149,65 +179,75 @@ class UIManager {
         this.displayTodos(todos);
     }
 
-      displayTodos(todos) {
+    displayTodos(todos) {
+        this.todosListBody.innerHTML = "";
 
-      this.todosListBody.innerHTML = "";
-      
-      if (todos.length === 0) {
-          this.todosListBody.innerHTML = `<tr><td colspan="5" class="text-center">No task found</td></tr>`;
-          return;
+        if (todos.length === 0) {
+            this.todosListBody.innerHTML = `<tr><td colspan="5" class="text-center">No task found</td></tr>`;
+            return;
         }
-        
-      todos.forEach((todo) => {
-        this.todosListBody.innerHTML += `
-          <tr class="todo-item" data-id="${todo.id}">
-            <td>
-                <span class="task-text" data-fulltext="${todo.task}">
-                    ${this.todoItemFormatter.formatTask(todo.task)}
-                </span>
-            </td>
-            <td>${this.todoItemFormatter.formatDate(todo.dueDate)}</td>
-            <td>${this.todoItemFormatter.formatStatus(todo.completed)}</td>
-            <td>
-              <button class="btn btn-warning btn-sm" onclick="uiManager.handleEditTodo('${todo.id
-              }')">
-                <i class="bx bx-edit-alt bx-bx-xs"></i>    
-              </button>
-              <button class="btn btn-success btn-sm" onclick="uiManager.handleToggleStatus('${todo.id
-              }')">
-                <i class="bx bx-check bx-xs"></i>
-              </button>
-              <button class="btn btn-error btn-sm" onclick="uiManager.handleDeleteTodo('${todo.id
-              }')">
-                <i class="bx bx-trash bx-xs"></i>
-              </button>
-            </td>
-          </tr>
-        `;
-      });
+
+        todos.forEach((todo) => {
+            const statusIcon = todo.completed ? 'bx-x' : 'bx-check';
+            const statusBtnColor = todo.completed ? 'btn-error' : 'btn-success';
+            const statusBtnTitle = todo.completed ? 'Mark as Pending' : 'Mark as Completed';
+            const isEditing = this.currentEditingId === todo.id;
+
+            this.todosListBody.innerHTML += `
+                <tr class="todo-item" data-id="${todo.id}">
+                    <td>
+                        <span class="task-text" data-fulltext="${todo.task}">
+                            ${this.todoItemFormatter.formatTask(todo.task)}
+                        </span>
+                    </td>
+                    <td>${this.todoItemFormatter.formatDate(todo.dueDate)}</td>
+                    <td>${this.todoItemFormatter.formatStatus(todo.completed)}</td>
+                    <td>
+                        ${!todo.completed && !isEditing ? `
+                        <button class="btn btn-warning btn-sm" onclick="uiManager.handleEditTodo('${todo.id}')">
+                            <i class="bx bx-edit-alt bx-bx-xs"></i>
+                        </button>` : ''}
+
+                        ${!isEditing ? `
+                        <button class="btn ${statusBtnColor} btn-sm" title="${statusBtnTitle}" onclick="uiManager.handleToggleStatus('${todo.id}')">
+                            <i class="bx ${statusIcon} bx-xs"></i>
+                        </button>` : ''}
+
+                        ${isEditing ? `
+                        <button class="btn btn-outline btn-sm" title="Cancel edit" onclick="uiManager.handleCancelEdit()">
+                            <i class="bx bx-x bx-xs"></i>
+                        </button>` : ''}
+
+                        <button class="btn btn-error btn-sm" onclick="uiManager.handleDeleteTodo('${todo.id}')">
+                            <i class="bx bx-trash bx-xs"></i>
+                        </button>
+                    </td>
+                </tr>
+            `;
+        });
     }
 
     handleEditTodo(id) {
         const todo = this.todoManager.todos.find((t) => t.id === id);
         if (todo) {
             this.taskInput.value = todo.task;
-            this.todoManager.deleteTodo(id);
-
-            const handleUpdate = () => {
-                this.addBtn.innerHTML = "<i class='bx bx-plus bx-sm'></i>";
-                this.showAlertMessage("Task updated successfully!", "success");
-                this.showAllTodos();
-                this.addBtn.removeEventListener("click", handleUpdate);
-            };
-
+            this.dateInput.value = todo.dueDate === "No due date" ? "" : todo.dueDate;
+            this.currentEditingId = id;
             this.addBtn.innerHTML = "<i class='bx bx-check bx-sm'></i>";
-            this.addBtn.addEventListener("click", handleUpdate);
+            this.showAllTodos();
         }
     }
 
     handleToggleStatus(id) {
-        this.todoManager.toggleTodoStatus(id);
-        this.showAllTodos();
+        const todo = this.todoManager.todos.find((t) => t.id === id);
+        if (todo) {
+            this.todoManager.toggleTodoStatus(id);
+            
+            const message = todo.completed ? "Awesome, You’ve successfully completed this task!" : "Oopsie! Task status undone";
+            
+            this.showAlertMessage(message, "success");
+            this.showAllTodos();
+        }
     }
 
     handleDeleteTodo(id) {
