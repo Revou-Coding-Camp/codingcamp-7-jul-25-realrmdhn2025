@@ -97,6 +97,8 @@ class UIManager {
         this.alertMessage = document.querySelector(".alert-message");
         this.deleteAllBtn = document.querySelector(".delete-all-button");
         this.currentEditingId = null;
+        this.selectedTodosIds = [];
+        this.selectedIds = new Set();
 
         this.addEventListeners();
         this.setupKeyboardNavigation();
@@ -123,7 +125,11 @@ class UIManager {
         });
 
         this.deleteAllBtn.addEventListener("click", () => {
-            this.handleClearAllTodos();
+            if (this.selectedTodosIds.length > 0) {
+                this.handleBulkDelete();
+            } else {
+                this.handleClearAllTodos();
+            }
         });
 
         const filterButtons = document.querySelectorAll(".todos-filter li");
@@ -243,9 +249,33 @@ class UIManager {
     }
 
     handleClearAllTodos() {
+        this.taskInput.value = "";
+        this.dateInput.value = "";
+        this.currentEditingId = null;
+        this.addBtn.innerHTML = "<i class='bx bx-plus bx-sm'></i>";
+        
         this.todoManager.clearAllTodos();
         this.showAllTodos();
         this.showAlertMessage("All tasks cleared successfully!", "error");
+    }
+
+    handleBulkDelete() {
+        if (this.selectedTodosIds.length === 0) return;
+
+        this.selectedTodosIds.forEach((id) => {
+            this.todoManager.deleteTodo(id);
+        });
+
+        this.selectedTodosIds = [];
+
+        this.taskInput.value = "";
+        this.dateInput.value = "";
+        this.currentEditingId = null;
+        this.addBtn.innerHTML = "<i class='bx bx-plus bx-sm'></i>";
+
+        this.showAlertMessage("Selected tasks deleted successfully!", "success");
+        this.showAllTodos();
+        this.updateBulkDeleteButton();
     }
 
     showAllTodos() {
@@ -270,34 +300,53 @@ class UIManager {
             this.todosListBody.innerHTML += `
                 <tr class="todo-item" data-id="${todo.id}">
                     <td>
-                        <span class="task-text" data-fulltext="${todo.task}">
+                        <input type="checkbox" class="select-todo-checkbox mr-2" data-id="${todo.id}" ${this.currentEditingId ? 'disabled' : ''} ${this.selectedTodosIds.includes(todo.id) ? 'checked' : ''}>
+                    </td>
+                    <td>
+                        <span class="task-text" data-full-text="${todo.task}">
                             ${this.todoItemFormatter.formatTask(todo.task)}
                         </span>
                     </td>
                     <td>${this.todoItemFormatter.formatDate(todo.dueDate)}</td>
                     <td>${this.todoItemFormatter.formatStatus(todo.completed)}</td>
                     <td>
-                        ${!todo.completed && !isEditing ? `
-                        <button class="btn btn-warning btn-sm" onclick="uiManager.handleEditTodo('${todo.id}')">
-                            <i class="bx bx-edit-alt bx-bx-xs"></i>
-                        </button>` : ''}
+                        <div class="flex gap-2 justify-center">
+                            ${!todo.completed && !isEditing ? `<button class="btn btn-warning btn-sm" onclick="uiManager.handleEditTodo('${todo.id}')">
+                                <i class="bx bx-edit-alt bx-bx-xs"></i>
+                            </button>` : ''}
 
-                        ${!isEditing ? `
-                        <button class="btn ${statusBtnColor} btn-sm" title="${statusBtnTitle}" onclick="uiManager.handleToggleStatus('${todo.id}')">
-                            <i class="bx ${statusIcon} bx-xs"></i>
-                        </button>` : ''}
+                            ${!isEditing ? `<button class="btn ${statusBtnColor} btn-sm" title="${statusBtnTitle}" onclick="uiManager.handleToggleStatus('${todo.id}')">
+                                <i class="bx ${statusIcon} bx-xs"></i>
+                            </button>` : ''}
 
-                        ${isEditing ? `
-                        <button class="btn btn-outline btn-sm" title="Cancel edit" onclick="uiManager.handleCancelEdit()">
-                            <i class="bx bx-x bx-xs"></i>
-                        </button>` : ''}
+                            ${isEditing ? `<button class="btn btn-outline btn-sm" title="Cancel edit" onclick="uiManager.handleCancelEdit()">
+                                <i class="bx bx-x bx-xs"></i>
+                            </button>` : ''}
 
-                        <button class="btn btn-error btn-sm" onclick="uiManager.handleDeleteTodo('${todo.id}')">
-                            <i class="bx bx-trash bx-xs"></i>
-                        </button>
+                            <button class="btn btn-error btn-sm" onclick="uiManager.handleDeleteTodo('${todo.id}')">
+                                <i class="bx bx-trash bx-xs"></i>
+                            </button>
+                        </div>
                     </td>
                 </tr>
             `;
+        });
+
+        const checkboxes = document.querySelectorAll(".select-todo-checkbox");
+        checkboxes.forEach((checkbox) => {
+            checkbox.addEventListener("change", (e) => {
+                const id = e.target.getAttribute("data-id");
+
+                if (e.target.checked) {
+                    if (!this.selectedTodosIds.includes(id)) {
+                        this.selectedTodosIds.push(id);
+                    }
+                } else {
+                    this.selectedTodosIds = this.selectedTodosIds.filter((todoId) => todoId !== id);
+                }
+
+                this.updateBulkDeleteButton();
+            });
         });
     }
 
@@ -309,6 +358,9 @@ class UIManager {
             this.currentEditingId = id;
             this.addBtn.innerHTML = "<i class='bx bx-check bx-sm'></i>";
             this.showAllTodos();
+
+            this.taskInput.focus();
+            this.taskInput.setSelectionRange(this.taskInput.value.length, this.taskInput.value.length);
         }
     }
 
@@ -325,6 +377,13 @@ class UIManager {
     }
 
     handleDeleteTodo(id) {
+        if (this.currentEditingId === id) {
+            this.taskInput.value = "";
+            this.dateInput.value = "";
+            this.currentEditingId = null;
+            this.addBtn.innerHTML = "<i class='bx bx-plus bx-sm'></i>";
+        }
+        
         this.todoManager.deleteTodo(id);
         this.showAlertMessage("Task deleted successfully!", "error");
         this.showAllTodos();
@@ -348,6 +407,15 @@ class UIManager {
             this.alertMessage.classList.remove("show");
             this.alertMessage.classList.add("hide");
         }, 3000);
+    }
+
+    updateBulkDeleteButton() {
+        const btn = this.deleteAllBtn;
+        if (this.selectedTodosIds.length > 0) {
+            btn.textContent = "Delete";
+        } else {
+            btn.textContent = "Delete all";
+        }
     }
 }
 
