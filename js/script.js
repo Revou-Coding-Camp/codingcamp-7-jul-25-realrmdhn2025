@@ -18,24 +18,26 @@ class TodoManager {
         this.todoItemFormatter = todoItemFormatter;
     }
 
-    addTodo(task, dueDate) {
+    addTodo(task, dueDate, description = "") {
         const newTodo = {
             id: this.getRandomId(),
             task: task,
             dueDate: this.todoItemFormatter.formatDate(dueDate),
             completed: false,
             status: "pending",
+            description
         };
         this.todos.push(newTodo);
         this.saveToLocalStorage();
         return newTodo;
     }
 
-    editTodo(id, updatedTask, updatedDueDate) {
+    editTodo(id, updatedTask, updatedDueDate, updatedDescription = "") {
         const todo = this.todos.find((t) => t.id === id);
         if (todo) {
             todo.task = updatedTask;
             todo.dueDate = this.todoItemFormatter.formatDate(updatedDueDate);
+            todo.description = updatedDescription;
             this.saveToLocalStorage();
         }
         return todo;
@@ -91,6 +93,8 @@ class UIManager {
         this.todoManager = todoManager;
         this.todoItemFormatter = todoItemFormatter;
         this.taskInput = document.querySelector("input");
+        this.descriptionInput = document.getElementById("description-input");
+        this.descriptionToggle = document.getElementById("toggle-description");
         this.dateInput = document.querySelector(".date-input");
         this.addBtn = document.querySelector(".add-task-button");
         this.todosListBody = document.querySelector(".todos-list-body");
@@ -161,6 +165,10 @@ class UIManager {
                 this.updateBulkDeleteButton();
             });
         }
+
+        this.descriptionToggle.addEventListener("change", () => {
+            this.descriptionInput.style.display = this.descriptionToggle.checked ? "block" : "none";
+        });
     }
 
     setupKeyboardNavigation() {
@@ -221,6 +229,7 @@ class UIManager {
     handleAddTodo() {
         const task = this.taskInput.value;
         const dueDate = this.dateInput.value;
+        const description = this.descriptionToggle.checked ? this.descriptionInput.value : "";
 
         if (dueDate) {
             const year = parseInt(dueDate.split("-")[0], 10);
@@ -232,18 +241,28 @@ class UIManager {
 
         if (task === "") {
             this.showAlertMessage("Please enter a task.", "error");
-        } else {
-            this.todoManager.addTodo(task, dueDate);
+
+            this.descriptionInput.value = "";
+            this.descriptionInput.style.display = "none";
+            this.descriptionToggle.checked = false;
+
+            return;
+        }
+            this.todoManager.addTodo(task, dueDate, description);
             this.showAllTodos();
             this.taskInput.value = "";
             this.dateInput.value = "";
-            this.showAlertMessage("Task added successfully!", "success");
-        }
+            this.descriptionInput.value = "";
+            this.descriptionToggle.checked = false;
+            this.descriptionInput.style.display = "none";
+
+        this.showAlertMessage("Task added successfully!", "success");
     }
 
     handleSaveEdit() {
         const updatedTask = this.taskInput.value;
         const updatedDate = this.dateInput.value;
+        const updatedDescription = this.descriptionToggle.checked ? this.descriptionInput.value : "";
 
         if (updatedDate) {
             const year = parseInt(updatedDate.split("-")[0], 10);
@@ -253,9 +272,13 @@ class UIManager {
             }
         }
 
-        this.todoManager.editTodo(this.currentEditingId, updatedTask, updatedDate);
+        this.todoManager.editTodo(this.currentEditingId, updatedTask, updatedDate, updatedDescription);
         this.taskInput.value = "";
         this.dateInput.value = "";
+        this.descriptionInput.value = "";
+        this.descriptionToggle.checked = false;
+        this.descriptionInput.style.display = "none";
+
         this.currentEditingId = null;
         this.addBtn.innerHTML = "<i class='bx bx-plus bx-sm'></i>";
         this.showAlertMessage("Task updated successfully!", "success");
@@ -265,6 +288,11 @@ class UIManager {
     handleCancelEdit() {
         this.taskInput.value = "";
         this.dateInput.value = "";
+
+        this.descriptionInput.value = "";
+        this.descriptionInput.style.display = "none";
+        this.descriptionToggle.checked = false;
+
         this.currentEditingId = null;
         this.addBtn.innerHTML = "<i class='bx bx-plus bx-sm'></i>";
         this.showAllTodos();
@@ -275,6 +303,11 @@ class UIManager {
 
         this.taskInput.value = "";
         this.dateInput.value = "";
+
+        this.descriptionInput.value = "";
+        this.descriptionInput.style.display = "none";
+        this.descriptionToggle.checked = false;
+        
         this.currentEditingId = null;
         this.addBtn.innerHTML = "<i class='bx bx-plus bx-sm'></i>";
 
@@ -338,9 +371,7 @@ class UIManager {
                         <input type="checkbox" class="select-todo-checkbox mr-2" data-id="${todo.id}" ${this.currentEditingId ? 'disabled' : ''} ${this.selectedTodosIds.includes(todo.id) ? 'checked' : ''}>
                     </td>
                     <td>
-                        <span
-                            class="task-text relative inline-block cursor-pointer hover:underline max-w-[150px] truncate"
-                            data-fulltext="${todo.task}">
+                        <span class="task-text relative inline-block cursor-pointer hover:underline max-w-[150px] truncate" data-fulltext="${todo.task}">
                             ${this.todoItemFormatter.formatTask(todo.task)}
                         </span>
                     </td>
@@ -367,6 +398,16 @@ class UIManager {
                     </td>
                 </tr>
             `;
+
+            if (todo.description && todo.description.trim() !== "") {
+                this.todosListBody.innerHTML += `
+                    <tr class="description-row">
+                        <td colspan="5">
+                            <p class="text-sm italic text-gray-400 pl-12 whitespace-pre-wrap break-words">"${todo.description}"</p>
+                        </td>
+                    </tr>
+                `;
+            }
         });
 
         const checkboxes = document.querySelectorAll(".select-todo-checkbox");
@@ -399,6 +440,11 @@ class UIManager {
         if (todo) {
             this.taskInput.value = todo.task;
             this.dateInput.value = todo.dueDate === "No due date" ? "" : todo.dueDate;
+
+            this.descriptionInput.value = todo.description || "";
+            this.descriptionToggle.checked = !!todo.description;
+            this.descriptionInput.style.display = todo.description ? "block" : "none";
+
             this.currentEditingId = id;
             this.addBtn.innerHTML = "<i class='bx bx-check bx-sm'></i>";
             this.showAllTodos();
@@ -434,6 +480,13 @@ class UIManager {
     }
 
     handleFilterTodos(status) {
+        this.descriptionToggle.checked = false;
+        this.descriptionInput.style.display = "none";
+        this.descriptionInput.value = "";
+
+        this.currentEditingId = null;
+        this.addBtn.innerHTML = "<i class='bx bx-plus bx-sm'></i>";
+
         const filteredTodos = this.todoManager.filterTodos(status);
         this.displayTodos(filteredTodos);
     }
@@ -502,25 +555,26 @@ class ThemeSwitcher {
     }
 }
 
-// Instantiating the classes
-const todoItemFormatter = new TodoItemFormatter();
-const todoManager = new TodoManager(todoItemFormatter);
-const uiManager = new UIManager(todoManager, todoItemFormatter);
-const themes = document.querySelectorAll(".theme-item");
-const html = document.querySelector("html");
-const themeSwitcher = new ThemeSwitcher(themes, html);
+document.addEventListener("DOMContentLoaded", () => {
+  const todoItemFormatter = new TodoItemFormatter();
+  const todoManager = new TodoManager(todoItemFormatter);
+  const uiManager = new UIManager(todoManager, todoItemFormatter);
 
-//expand or collapse the task text on click
-document.addEventListener("click", function (e) {
-    const allTasks = document.querySelectorAll(".task-text.expanded");
+  const themes = document.querySelectorAll(".theme-item");
+  const html = document.querySelector("html");
+  const themeSwitcher = new ThemeSwitcher(themes, html);
 
-    allTasks.forEach((el) => {
-        if (!el.contains(e.target)) {
-            el.classList.remove("expanded");
-        }
-    });
+  // expand or collapse task text
+  document.addEventListener("click", function (e) {
+      const allTasks = document.querySelectorAll(".task-text.expanded");
+      allTasks.forEach((el) => {
+          if (!el.contains(e.target)) {
+              el.classList.remove("expanded");
+          }
+      });
 
-    if (e.target.classList.contains("task-text")) {
-        e.target.classList.toggle("expanded");
-    }
+      if (e.target.classList.contains("task-text")) {
+          e.target.classList.toggle("expanded");
+      }
+  });
 });

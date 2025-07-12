@@ -25,12 +25,24 @@
       <div class="alert-message"></div>
       <div class="input-section">
         <input type="text" placeholder="Add a new to-do" class="input input-bordered input-accent w-full max-w-xs"/>
+        
         <input type="date" class="input input-bordered input-accent w-full max-w-xs date-input"/>
+        
         <button class="btn btn-accent add-task-button">
           <i class="bx bx-plus bx-sm"></i>
         </button>
       </div>
     </header>
+
+    <div class="description-section mt-[4px] w-full max-w-full">
+      <div class="flex items-center">
+        <input type="checkbox" id="toggle-description" class="checkbox checkbox-sm">
+        <label for="toggle-description" class="label cursor-pointer">
+          <span class="label text">Add Description</span>
+        </label>
+      </div>
+      <textarea id="description-input" maxlength="1000"placeholder="Add description here..." class="textarea textarea-bordered textarea-accent w-full max-w-md hidden mt-2"></textarea>
+    </div>
 
     <div class="todos-filter">
       <div class="dropdown">
