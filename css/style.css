@@ -214,17 +214,28 @@ header .input-section {
     transition: all 0.3s ease;
 }
 
+.task-text.expanded::after {
+    content: attr(data-fulltext);
+    white-space: pre-line;
+    position: absolute;
+    background: #333;
+    color: #fff;
+    padding: 8px 12px;
+    border-radius: 6px;
+    font-size: 0.875rem;
+    line-height: 1.4;
+    max-width: 320px;
+    z-index: 999;
+    top: 50%;
+    left: 0;
+    box-shadow: 0 4px 12px rgba(0, 0, 0, 0.25);
+    pointer-events: none;
+}
+
 .task-checkbox {
     width: 18px;
     height: 18px;
     accent-color: var(--primary-color);
     margin-right: 10px;
     cursor: pointer;
-}
-
-th:last-child,
-td:last-child {
-    width: 100px;
-    text-align: center;
-    vertical-align: middle;
 }

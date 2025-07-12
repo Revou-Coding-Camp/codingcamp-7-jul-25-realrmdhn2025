@@ -340,7 +340,7 @@ class UIManager {
                     <td>
                         <span
                             class="task-text relative inline-block cursor-pointer hover:underline max-w-[150px] truncate"
-                            title="${todo.task}">
+                            data-fulltext="${todo.task}">
                             ${this.todoItemFormatter.formatTask(todo.task)}
                         </span>
                     </td>
@@ -512,6 +512,14 @@ const themeSwitcher = new ThemeSwitcher(themes, html);
 
 //expand or collapse the task text on click
 document.addEventListener("click", function (e) {
+    const allTasks = document.querySelectorAll(".task-text.expanded");
+
+    allTasks.forEach((el) => {
+        if (!el.contains(e.target)) {
+            el.classList.remove("expanded");
+        }
+    });
+
     if (e.target.classList.contains("task-text")) {
         e.target.classList.toggle("expanded");
     }
