@@ -282,6 +282,20 @@ header .input-section {
   color: #aaa;
 }
 
-.toggle-desc-btn:hover {
+/* === icon button, auto theme detection === */
+
+[data-theme="light"] .toggle-desc-btn i {
+  color: #333;
+}
+[data-theme="light"] .toggle-desc-btn:hover i {
+  color: #000;
+}
+
+[data-theme="dark"] .toggle-desc-btn i,
+[data-theme="night"] .toggle-desc-btn i {
+  color: #ccc;
+}
+[data-theme="dark"] .toggle-desc-btn:hover i,
+[data-theme="night"] .toggle-desc-btn:hover i {
   color: #fff;
 }
