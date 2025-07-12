@@ -268,3 +268,20 @@ header .input-section {
   padding-left: 1rem;
   padding-right: 0.5rem;
 }
+
+.hidden {
+  display: none;
+}
+
+.toggle-desc-btn {
+  background: none;
+  border: none;
+  cursor: pointer;
+  padding: 0;
+  margin-left: 4px;
+  color: #aaa;
+}
+
+.toggle-desc-btn:hover {
+  color: #fff;
+}

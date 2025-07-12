@@ -260,9 +260,14 @@ class UIManager {
     }
 
     handleSaveEdit() {
-        const updatedTask = this.taskInput.value;
+        const updatedTask = this.taskInput.value.trim();
         const updatedDate = this.dateInput.value;
         const updatedDescription = this.descriptionToggle.checked ? this.descriptionInput.value : "";
+
+        if (updatedTask === "") {
+            this.showAlertMessage("Please enter a task.", "error");
+            return;
+        }
 
         if (updatedDate) {
             const year = parseInt(updatedDate.split("-")[0], 10);
@@ -369,6 +374,14 @@ class UIManager {
                 <tr class="todo-item" data-id="${todo.id}">
                     <td>
                         <input type="checkbox" class="select-todo-checkbox mr-2" data-id="${todo.id}" ${this.currentEditingId ? 'disabled' : ''} ${this.selectedTodosIds.includes(todo.id) ? 'checked' : ''}>
+
+                        ${
+                            todo.description?.trim()
+                                ? `<button class="toggle-desc-btn" data-id="${todo.id}" title="Show/Hide Description">
+                                    <i class="bx bx-show toggle-icon" id="icon-${todo.id}"></i>
+                                </button>`
+                                : ''
+                        }
                     </td>
                     <td>
                         <span class="task-text relative inline-block cursor-pointer hover:underline max-w-[150px] truncate" data-fulltext="${todo.task}">
@@ -401,7 +414,7 @@ class UIManager {
 
             if (todo.description && todo.description.trim() !== "") {
                 this.todosListBody.innerHTML += `
-                    <tr class="description-row">
+                    <tr class="description-row hidden" id="desc-${todo.id}">
                         <td colspan="5">
                             <p class="text-sm italic text-gray-400 pl-12 whitespace-pre-wrap break-words">"${todo.description}"</p>
                         </td>
@@ -433,6 +446,24 @@ class UIManager {
                 this.updateBulkDeleteButton();
             });
         });
+
+        const toggleDescBtns = document.querySelectorAll(".toggle-desc-btn");
+        toggleDescBtns.forEach((btn) => {
+            btn.addEventListener("click", () => {
+                const id = btn.getAttribute("data-id");
+                const descRow = document.getElementById(`desc-${id}`);
+                const icon = document.getElementById(`icon-${id}`);
+                if (descRow.classList.contains("hidden")) {
+                    descRow.classList.remove("hidden");
+                    icon.classList.remove("bx-show");
+                    icon.classList.add("bx-hide");
+                } else {
+                    descRow.classList.add("hidden");
+                    icon.classList.remove("bx-hide");
+                    icon.classList.add("bx-show");
+                }
+            });
+        });
     }
 
     handleEditTodo(id) {
@@ -447,7 +478,7 @@ class UIManager {
 
             this.currentEditingId = id;
             this.addBtn.innerHTML = "<i class='bx bx-check bx-sm'></i>";
-            this.showAllTodos();
+            // this.showAllTodos();
 
             this.taskInput.focus();
             this.taskInput.setSelectionRange(this.taskInput.value.length, this.taskInput.value.length);
@@ -558,7 +589,9 @@ class ThemeSwitcher {
 document.addEventListener("DOMContentLoaded", () => {
   const todoItemFormatter = new TodoItemFormatter();
   const todoManager = new TodoManager(todoItemFormatter);
-  const uiManager = new UIManager(todoManager, todoItemFormatter);
+  const ui = new UIManager(todoManager, todoItemFormatter);
+
+  window.uiManager = ui;
 
   const themes = document.querySelectorAll(".theme-item");
   const html = document.querySelector("html");
