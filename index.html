@@ -18,13 +18,31 @@
   </style>
 </head>
 <body>
-  <div class="container">
+  <div id="landing-page" class="w-full min-h-screen flex flex-col justify-center items-center px-4 text-center bg-base-200 dark:bg-neutral">
+    <div class="card bg-base-100 bg-opacity-90 text-base-content dark:bg-base-200 dark:text-base-content shadow-2xl p-10 max-w-md w-full space-y-6 border border-base-300">
+      <h2 class="text-3xl md:text-4xl font-extrabold text-primary tracking-wide animate-pulse">
+        Welcome to <br><span class="text-secondary">To-Do List Web Application</span>
+      </h2>
+
+      <button id="login-btn" class="btn btn-primary w-full text-lg tracking-wide">
+        <i class='bx bx-log-in text-xl mr-2'></i> Login </button>
+
+      <form id="name-form" class="hidden space-y-4">
+        <input type="text" id="name-input" placeholder="Enter your name" required class="input input-bordered w-full text-base-content" />
+        <button type="submit" class="btn btn-success w-full">
+          <i class='bx bx-arrow-to-right mr-2'></i> Continue
+        </button>
+      </form>
+    </div>
+  </div> 
+
+  <div class="container hidden" id="todo-app">
     <header>
       <h1>To-Do List</h1>
       <!--Error Message-->
       <div class="alert-message"></div>
       <div class="input-section">
-        <input type="text" placeholder="Add a new to-do" class="input input-bordered input-accent w-full max-w-xs"/>
+        <input type="text" id="task-input" placeholder="Add a new to-do" class="input input-bordered input-accent w-full max-w-xs"/>
         
         <input type="date" class="input input-bordered input-accent w-full max-w-xs date-input"/>
         
@@ -86,6 +104,8 @@
             <li class="theme-item" theme="night"><a class="btn btn-ghost w-full justify-start">Night</a></li>
         </ul>
     </div>
+
+    <button id="logout-btn" class="btn btn-outline hidden">Logout</button>
   </div>
 
   <script src="js/script.js"></script>

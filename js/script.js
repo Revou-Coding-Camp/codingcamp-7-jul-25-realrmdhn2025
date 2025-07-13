@@ -92,7 +92,7 @@ class UIManager {
     constructor(todoManager, todoItemFormatter) {
         this.todoManager = todoManager;
         this.todoItemFormatter = todoItemFormatter;
-        this.taskInput = document.querySelector("input");
+        this.taskInput = document.getElementById("task-input");
         this.descriptionInput = document.getElementById("description-input");
         this.descriptionToggle = document.getElementById("toggle-description");
         this.dateInput = document.querySelector(".date-input");
@@ -227,9 +227,9 @@ class UIManager {
     }
 
     handleAddTodo() {
-        const task = this.taskInput.value;
+        const task = sanitizeHTML(this.taskInput.value.trim());
         const dueDate = this.dateInput.value;
-        const description = this.descriptionToggle.checked ? this.descriptionInput.value : "";
+        const description = this.descriptionToggle.checked ? sanitizeHTML(this.descriptionInput.value.trim()) : "";
 
         if (dueDate) {
             const year = parseInt(dueDate.split("-")[0], 10);
@@ -260,9 +260,9 @@ class UIManager {
     }
 
     handleSaveEdit() {
-        const updatedTask = this.taskInput.value.trim();
+        const updatedTask = sanitizeHTML(this.taskInput.value.trim());
         const updatedDate = this.dateInput.value;
-        const updatedDescription = this.descriptionToggle.checked ? this.descriptionInput.value : "";
+        const updatedDescription = this.descriptionToggle.checked ? sanitizeHTML(this.descriptionInput.value.trim()) : "";
 
         if (updatedTask === "") {
             this.showAlertMessage("Please enter a task.", "error");
@@ -384,8 +384,8 @@ class UIManager {
                         }
                     </td>
                     <td>
-                        <span class="task-text relative inline-block cursor-pointer hover:underline max-w-[150px] truncate" data-fulltext="${todo.task}">
-                            ${this.todoItemFormatter.formatTask(todo.task)}
+                        <span class="task-text relative inline-block cursor-pointer hover:underline max-w-[150px] truncate" data-fulltext="${sanitizeHTML(todo.task)}">
+                            ${sanitizeHTML(this.todoItemFormatter.formatTask(todo.task))}
                         </span>
                     </td>
                     <td>${this.todoItemFormatter.formatDate(todo.dueDate)}</td>
@@ -416,7 +416,7 @@ class UIManager {
                 this.todosListBody.innerHTML += `
                     <tr class="description-row hidden" id="desc-${todo.id}">
                         <td colspan="5">
-                            <p class="text-sm italic text-gray-400 pl-12 whitespace-pre-wrap break-words">"${todo.description}"</p>
+                            <p class="text-sm italic text-gray-400 pl-12 whitespace-pre-wrap break-words">"${sanitizeHTML(todo.description)}"</p>
                         </td>
                     </tr>
                 `;
@@ -482,6 +482,7 @@ class UIManager {
 
             this.taskInput.focus();
             this.taskInput.setSelectionRange(this.taskInput.value.length, this.taskInput.value.length);
+            this.showAllTodos();
         }
     }
 
@@ -591,6 +592,24 @@ document.addEventListener("DOMContentLoaded", () => {
   const todoManager = new TodoManager(todoItemFormatter);
   const ui = new UIManager(todoManager, todoItemFormatter);
 
+  const savedUser = localStorage.getItem("username");
+  if (savedUser && hasValidLoginSession()) {
+    landingPage.classList.add("hidden");
+    todoApp.classList.remove("hidden");
+    logoutBtn.classList.remove("hidden");
+
+    ui.showAlertMessage(`Welcome back, ${savedUser}!`, "success");
+  } else {
+    if (savedUser && !hasValidLoginSession()) {
+        ui.showAlertMessage("Session expired. Please login again.", "warning");
+    }
+    landingPage.classList.remove("hidden");
+    todoApp.classList.add("hidden");
+    nameForm.classList.add("hidden");
+    loginBtn.classList.remove("hidden");
+    logoutBtn.classList.add("hidden");
+  }
+
   window.uiManager = ui;
 
   const themes = document.querySelectorAll(".theme-item");
@@ -610,4 +629,80 @@ document.addEventListener("DOMContentLoaded", () => {
           e.target.classList.toggle("expanded");
       }
   });
+});
+
+const landingPage = document.getElementById("landing-page");
+const todoApp = document.getElementById("todo-app");
+const loginBtn = document.getElementById("login-btn");
+const nameForm = document.getElementById("name-form");
+const nameInput = document.getElementById("name-input");
+const logoutBtn = document.getElementById("logout-btn");
+
+function sanitizeHTML(str) {
+    const div = document.createElement("div");
+    div.textContent = str;
+    return div.innerHTML;
+}
+
+const LOGIN_EXPIRY_MINUTES = 1;
+
+function hasValidLoginSession() {
+    const logoutTimestamp = localStorage.getItem("logoutTimestamp");
+    if (!logoutTimestamp) return false;
+
+    const now = Date.now();
+    const elapsed = now - parseInt(logoutTimestamp, 10);
+    const threshold = LOGIN_EXPIRY_MINUTES * 60 * 1000;
+
+    return elapsed <= threshold;
+}
+
+loginBtn.addEventListener("click", () => {
+    const savedUser = localStorage.getItem("username");
+
+    if (savedUser && hasValidLoginSession()) {
+        landingPage.classList.add("hidden");
+        todoApp.classList.remove("hidden");
+        logoutBtn.classList.remove("hidden");
+        uiManager.showAlertMessage(`Welcome back, ${sanitizeHTML(savedUser)}!`, "success");
+    } else if (savedUser && !hasValidLoginSession()) {
+        localStorage.removeItem("username");
+        uiManager.showAlertMessage("Session expired. Please login again.", "warning");
+
+        loginBtn.classList.add("hidden");
+        nameForm.classList.remove("hidden");
+    } else {
+        loginBtn.classList.add("hidden");
+        nameForm.classList.remove("hidden");
+    }
+});
+
+nameForm.addEventListener("submit", (e) => {
+    e.preventDefault();
+    const name = nameInput.value.trim();
+    if (name !== "") {
+        localStorage.setItem("username", name);
+        localStorage.setItem("loginTimestamp", Date.now().toString());
+        localStorage.removeItem("logoutTimestamp");
+        
+        landingPage.classList.add("hidden");
+        todoApp.classList.remove("hidden");
+        logoutBtn.classList.remove("hidden");
+
+        uiManager.showAlertMessage(`Welcome, ${sanitizeHTML(name)}!`, "success");
+    }
+});
+
+logoutBtn.addEventListener("click", () => {
+    localStorage.setItem("logoutTimestamp", Date.now().toString());
+    landingPage.classList.remove("hidden");
+    todoApp.classList.add("hidden");
+    nameForm.classList.add("hidden");
+    loginBtn.classList.remove("hidden");
+    logoutBtn.classList.add("hidden");
+    nameInput.value = "";
+});
+
+window.addEventListener("beforeunload", () => {
+    localStorage.setItem("logoutTimestamp", Date.now().toString());
 });
